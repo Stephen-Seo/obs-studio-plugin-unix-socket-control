@@ -8,6 +8,8 @@
 #include <sys/stat.h>
 #include <threads.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
 
 // obs-studio includes
 #include <obs-frontend-api.h>
@@ -15,6 +17,9 @@
 int unix_socket_handler_thread_function(void *ud) {
     UnixSocketHandler *handler = (UnixSocketHandler*)ud;
 
+    struct timespec duration;
+    duration.tv_sec = 0;
+    duration.tv_nsec = 10000000;
     int ret;
     int data_socket;
     char buffer[8];
@@ -24,44 +29,62 @@ int unix_socket_handler_thread_function(void *ud) {
         mtx_lock(handler->mutex);
         if ((handler->ccflags & 1) != 0) {
             mtx_unlock(handler->mutex);
-            break;
+            return 0;
         }
         mtx_unlock(handler->mutex);
 
         data_socket = accept(handler->socket_descriptor, 0, 0);
         if (data_socket == -1) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                thrd_sleep(&duration, 0);
+                continue;
+            }
             // Error. TODO handle this.
             break;
         }
 
         memset(ret_buffer, 0, sizeof(ret_buffer));
+        while (1) {
+            mtx_lock(handler->mutex);
+            if ((handler->ccflags & 1) != 0) {
+                mtx_unlock(handler->mutex);
+                close(data_socket);
+                return 0;
+            }
+            mtx_unlock(handler->mutex);
 
-        ret = read(data_socket, buffer, sizeof(buffer));
-        if (ret == -1) {
-            // Error. TODO handle this.
+            ret = read(data_socket, buffer, sizeof(buffer));
+            if (ret == -1) {
+                if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                    thrd_sleep(&duration, 0);
+                    continue;
+                }
+                // Error. TODO handle this.
+                break;
+            }
+
+            if (buffer[0] == UNIX_SOCKET_EVENT_START_RECORDING) {
+                obs_frontend_recording_start();
+                ret_buffer[0] = UNIX_SOCKET_EVENT_NOP;
+            } else if (buffer[0] == UNIX_SOCKET_EVENT_STOP_RECORDING) {
+                obs_frontend_recording_stop();
+                ret_buffer[0] = UNIX_SOCKET_EVENT_NOP;
+            } else if (buffer[0] == UNIX_SOCKET_EVENT_START_STREAMING) {
+                obs_frontend_streaming_start();
+                ret_buffer[0] = UNIX_SOCKET_EVENT_NOP;
+            } else if (buffer[0] == UNIX_SOCKET_EVENT_STOP_STREAMING) {
+                obs_frontend_streaming_stop();
+                ret_buffer[0] = UNIX_SOCKET_EVENT_NOP;
+            } else if (buffer[0] == UNIX_SOCKET_EVENT_GET_STATUS) {
+                ret_buffer[0] = UNIX_SOCKET_EVENT_GET_STATUS;
+                if (obs_frontend_recording_active()) {
+                    ret_buffer[1] |= 1;
+                }
+                if (obs_frontend_streaming_active()) {
+                    ret_buffer[1] |= 2;
+                }
+            }
             break;
-        }
-
-        if (buffer[0] == UNIX_SOCKET_EVENT_START_RECORDING) {
-            obs_frontend_recording_start();
-            ret_buffer[0] = UNIX_SOCKET_EVENT_NOP;
-        } else if (buffer[0] == UNIX_SOCKET_EVENT_STOP_RECORDING) {
-            obs_frontend_recording_stop();
-            ret_buffer[0] = UNIX_SOCKET_EVENT_NOP;
-        } else if (buffer[0] == UNIX_SOCKET_EVENT_START_STREAMING) {
-            obs_frontend_streaming_start();
-            ret_buffer[0] = UNIX_SOCKET_EVENT_NOP;
-        } else if (buffer[0] == UNIX_SOCKET_EVENT_STOP_STREAMING) {
-            obs_frontend_streaming_stop();
-            ret_buffer[0] = UNIX_SOCKET_EVENT_NOP;
-        } else if (buffer[0] == UNIX_SOCKET_EVENT_GET_STATUS) {
-            ret_buffer[0] = UNIX_SOCKET_EVENT_GET_STATUS;
-            if (obs_frontend_recording_active()) {
-                ret_buffer[1] |= 1;
-            }
-            if (obs_frontend_streaming_active()) {
-                ret_buffer[1] |= 2;
-            }
         }
 
         ret = write(data_socket, ret_buffer, sizeof(ret_buffer));
@@ -88,12 +111,20 @@ void init_unix_socket_handler(UnixSocketHandler *handler) {
         return;
     }
 
+    int ret = fcntl(handler->socket_descriptor, F_SETFL, O_NONBLOCK, 1);
+    if (ret != -1) {
+        close(handler->socket_descriptor);
+        handler->socket_descriptor = -1;
+        handler->flags = 0xFFFFFFFFFFFFFFFF;
+        return;
+    }
+
     handler->name.sun_family = AF_UNIX;
     strncpy(handler->name.sun_path,
             UNIX_SOCKET_HANDLER_SOCKET_NAME,
             sizeof(handler->name.sun_path) - 1);
 
-    int ret = bind(handler->socket_descriptor,
+    ret = bind(handler->socket_descriptor,
                    (const struct sockaddr*) &handler->name,
                    sizeof(handler->name));
     if (ret == -1) {
