@@ -21,3 +21,5 @@ add_library(unix-socket-control MODULE
 
 find_package(libobs REQUIRED)
 target_link_libraries(unix-socket-control PRIVATE OBS::libobs)
+
+add_executable(unix-socket-control-client src/client.c)
