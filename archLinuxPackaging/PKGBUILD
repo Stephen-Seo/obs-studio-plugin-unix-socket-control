@@ -1,0 +1,24 @@
+pkgname=obs-studio-plugin-unix-socket-control
+pkgver=1.0
+pkgrel=1
+pkgdesc="An obs studio plugin to command obs to start/stop recording/streaming via unix socket"
+arch=(x86_64)
+url="https://git.seodisparate.com/stephenseo/obs-studio-plugin-unix-socket-control"
+license=('MIT')
+depends=(obs-studio)
+makedepends=(cmake)
+source=("${pkgname}_${pkgver}.tar.gz::$url/archive/$pkgver.tar.gz")
+sha256sums=(83edb88ff20687b079fab360d6b38738f0d2c085c1f65dd6fcff2339413768ab)
+
+build() {
+	cd "$pkgname"
+    mkdir buildRelease
+    cd buildRelease
+    cmake -DCMAKE_BUILD_TYPE=Release ..
+    make
+}
+
+package() {
+    install -D -m555 "$srcdir/$pkgname/buildRelease/libunix-socket-control.so" "$pkgdir/usr/lib/obs-plugins/lib$pkgname.so"
+    install -D -m555 "$srcdir/$pkgname/buildRelease/unix-socket-control-client" "$pkgdir/usr/bin/$pkgname-client"
+}
