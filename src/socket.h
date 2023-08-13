@@ -31,6 +31,6 @@ typedef struct UnixSocketHandler {
 
 void init_unix_socket_handler(UnixSocketHandler *handler);
 void cleanup_unix_socket_handler(UnixSocketHandler *handler);
-int is_unix_socket_handler_valid(UnixSocketHandler handler);
+int is_unix_socket_handler_valid(const UnixSocketHandler *handler);
 
 #endif

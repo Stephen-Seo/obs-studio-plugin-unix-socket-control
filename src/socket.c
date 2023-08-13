@@ -2,6 +2,7 @@
 
 // standard library includes
 #include <stdlib.h>
+#include <stdio.h>
 
 // unix includes
 #include <string.h>
@@ -122,6 +123,7 @@ void init_unix_socket_handler(UnixSocketHandler *handler) {
     handler->socket_descriptor = socket(AF_UNIX, SOCK_SEQPACKET, 0);
     if (handler->socket_descriptor == -1) {
         handler->flags = 0xFFFFFFFFFFFFFFFF;
+        fprintf(stderr, "ERROR: unix-socket-control: Failed to create socket!\n");
         return;
     }
 
@@ -130,6 +132,7 @@ void init_unix_socket_handler(UnixSocketHandler *handler) {
         close(handler->socket_descriptor);
         handler->socket_descriptor = -1;
         handler->flags = 0xFFFFFFFFFFFFFFFF;
+        fprintf(stderr, "ERROR: unix-socket-control: Failed to set socket non-blocking!\n");
         return;
     }
 
@@ -145,6 +148,7 @@ void init_unix_socket_handler(UnixSocketHandler *handler) {
         close(handler->socket_descriptor);
         handler->socket_descriptor = -1;
         handler->flags = 0xFFFFFFFFFFFFFFFF;
+        fprintf(stderr, "ERROR: unix-socket-control: Failed to bind socket to filename!\n");
         return;
     }
 
@@ -154,6 +158,7 @@ void init_unix_socket_handler(UnixSocketHandler *handler) {
         handler->socket_descriptor = -1;
         unlink(handler->socket_filename);
         handler->flags = 0xFFFFFFFFFFFFFFFF;
+        fprintf(stderr, "ERROR: unix-socket-control: Failed to set socket listen!\n");
         return;
     }
 
@@ -165,6 +170,7 @@ void init_unix_socket_handler(UnixSocketHandler *handler) {
         handler->socket_descriptor = -1;
         unlink(handler->socket_filename);
         handler->flags = 0xFFFFFFFFFFFFFFFF;
+        fprintf(stderr, "ERROR: unix-socket-control: Failed to init mutex!\n");
         return;
     }
 
@@ -178,6 +184,7 @@ void init_unix_socket_handler(UnixSocketHandler *handler) {
         unlink(handler->socket_filename);
         mtx_destroy(handler->mutex);
         handler->flags = 0xFFFFFFFFFFFFFFFF;
+        fprintf(stderr, "ERROR: unix-socket-control: Failed to init thread!\n");
         return;
     }
 
@@ -211,6 +218,6 @@ void cleanup_unix_socket_handler(UnixSocketHandler *handler) {
     handler->flags = 0xFFFFFFFFFFFFFFFF;
 }
 
-int is_unix_socket_handler_valid(UnixSocketHandler handler) {
-    return handler.flags == 0xFFFFFFFFFFFFFFFF ? 0 : 1;
+int is_unix_socket_handler_valid(const UnixSocketHandler *handler) {
+    return handler->flags == 0xFFFFFFFFFFFFFFFF ? 0 : 1;
 }
