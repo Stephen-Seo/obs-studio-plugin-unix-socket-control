@@ -24,6 +24,7 @@ int unix_socket_handler_thread_function(void *ud) {
     int data_socket;
     char buffer[8];
     char ret_buffer[8];
+    unsigned int ticks;
 
     while(1) {
         mtx_lock(handler->mutex);
@@ -43,6 +44,7 @@ int unix_socket_handler_thread_function(void *ud) {
             break;
         }
 
+        ticks = 0;
         memset(ret_buffer, 0, sizeof(ret_buffer));
         while (1) {
             mtx_lock(handler->mutex);
@@ -56,6 +58,11 @@ int unix_socket_handler_thread_function(void *ud) {
             ret = read(data_socket, buffer, sizeof(buffer));
             if (ret == -1) {
                 if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                    if (++ticks > 200) {
+                        // Timed out.
+                        ret = -1;
+                        break;
+                    }
                     thrd_sleep(&duration, 0);
                     continue;
                 }
@@ -84,13 +91,17 @@ int unix_socket_handler_thread_function(void *ud) {
                     ret_buffer[1] |= 2;
                 }
             }
+            ret = 0;
             break;
         }
 
-        ret = write(data_socket, ret_buffer, sizeof(ret_buffer));
-        if (ret == -1) {
-            // Error. TODO handle this.
-            break;
+        if (ret == 0) {
+            ret = write(data_socket, ret_buffer, sizeof(ret_buffer));
+            if (ret == -1) {
+                // Error. TODO handle this.
+                close(data_socket);
+                continue;
+            }
         }
 
         close(data_socket);

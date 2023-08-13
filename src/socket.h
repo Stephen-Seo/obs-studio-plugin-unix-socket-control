@@ -23,7 +23,7 @@ typedef struct UnixSocketHandler {
     /*
      * ???? 0001 - thread should stop
      */
-    volatile uint64_t ccflags;
+    uint64_t ccflags;
 
     int socket_descriptor;
 } UnixSocketHandler;
