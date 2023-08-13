@@ -24,6 +24,7 @@ typedef struct UnixSocketHandler {
      * ???? 0001 - thread should stop
      */
     uint64_t ccflags;
+    char socket_filename[108];
 
     int socket_descriptor;
 } UnixSocketHandler;

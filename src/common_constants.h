@@ -1,7 +1,7 @@
 #ifndef OBS_STUDIO_PLUGIN_UNIX_SOCKET_CONTROL_COMMON_CONSTANTS_H_
 #define OBS_STUDIO_PLUGIN_UNIX_SOCKET_CONTROL_COMMON_CONSTANTS_H_
 
-#define UNIX_SOCKET_HANDLER_SOCKET_NAME "/tmp/obs-studio-plugin-unix-socket-handler-socket"
+#define UNIX_SOCKET_HANDLER_SOCKET_FMT_STRING "/tmp/%s_obs-studio-plugin-unix-socket-handler-socket"
 
 typedef enum UnixSocketEventType {
     UNIX_SOCKET_EVENT_NOP = 0,

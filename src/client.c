@@ -1,6 +1,7 @@
 // standard library includes
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 // unix includes
 #include <sys/socket.h>
@@ -50,6 +51,10 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    char socket_filename[108];
+    snprintf(socket_filename, sizeof(socket_filename),
+             UNIX_SOCKET_HANDLER_SOCKET_FMT_STRING, getenv("HOME"));
+
     struct sockaddr_un addr;
     int ret;
     __attribute__((cleanup(cleanup_data_socket))) int data_socket = -1;
@@ -68,7 +73,7 @@ int main(int argc, char **argv) {
 
     addr.sun_family = AF_UNIX;
     strncpy(addr.sun_path,
-            UNIX_SOCKET_HANDLER_SOCKET_NAME,
+            socket_filename,
             sizeof(addr.sun_path) - 1);
 
     ret = connect(data_socket, (const struct sockaddr*) &addr, sizeof(addr));

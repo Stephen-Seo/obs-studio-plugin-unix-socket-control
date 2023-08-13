@@ -113,6 +113,9 @@ int unix_socket_handler_thread_function(void *ud) {
 void init_unix_socket_handler(UnixSocketHandler *handler) {
     memset(handler, 0, sizeof(UnixSocketHandler));
 
+    snprintf(handler->socket_filename, sizeof(handler->socket_filename),
+             UNIX_SOCKET_HANDLER_SOCKET_FMT_STRING, getenv("HOME"));
+
     umask(S_IRWXO);
 
     // Set up unix socket.
@@ -132,7 +135,7 @@ void init_unix_socket_handler(UnixSocketHandler *handler) {
 
     handler->name.sun_family = AF_UNIX;
     strncpy(handler->name.sun_path,
-            UNIX_SOCKET_HANDLER_SOCKET_NAME,
+            handler->socket_filename,
             sizeof(handler->name.sun_path) - 1);
 
     ret = bind(handler->socket_descriptor,
@@ -149,7 +152,7 @@ void init_unix_socket_handler(UnixSocketHandler *handler) {
     if (ret == -1) {
         close(handler->socket_descriptor);
         handler->socket_descriptor = -1;
-        unlink(UNIX_SOCKET_HANDLER_SOCKET_NAME);
+        unlink(handler->socket_filename);
         handler->flags = 0xFFFFFFFFFFFFFFFF;
         return;
     }
@@ -160,7 +163,7 @@ void init_unix_socket_handler(UnixSocketHandler *handler) {
     if (ret != thrd_success) {
         close(handler->socket_descriptor);
         handler->socket_descriptor = -1;
-        unlink(UNIX_SOCKET_HANDLER_SOCKET_NAME);
+        unlink(handler->socket_filename);
         handler->flags = 0xFFFFFFFFFFFFFFFF;
         return;
     }
@@ -172,7 +175,7 @@ void init_unix_socket_handler(UnixSocketHandler *handler) {
     if (ret != thrd_success) {
         close(handler->socket_descriptor);
         handler->socket_descriptor = -1;
-        unlink(UNIX_SOCKET_HANDLER_SOCKET_NAME);
+        unlink(handler->socket_filename);
         mtx_destroy(handler->mutex);
         handler->flags = 0xFFFFFFFFFFFFFFFF;
         return;
@@ -189,7 +192,7 @@ void cleanup_unix_socket_handler(UnixSocketHandler *handler) {
     if (handler->socket_descriptor >= 0) {
         close(handler->socket_descriptor);
         handler->socket_descriptor = -1;
-        unlink(UNIX_SOCKET_HANDLER_SOCKET_NAME);
+        unlink(handler->socket_filename);
     }
     if (handler->mutex) {
         mtx_lock(handler->mutex);
