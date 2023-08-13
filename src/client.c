@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
 
     char socket_filename[108];
     snprintf(socket_filename, sizeof(socket_filename),
-             UNIX_SOCKET_HANDLER_SOCKET_FMT_STRING, getenv("HOME"));
+             UNIX_SOCKET_HANDLER_SOCKET_FMT_STRING, getenv("USER"));
 
     struct sockaddr_un addr;
     int ret;

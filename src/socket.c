@@ -115,7 +115,7 @@ void init_unix_socket_handler(UnixSocketHandler *handler) {
     memset(handler, 0, sizeof(UnixSocketHandler));
 
     snprintf(handler->socket_filename, sizeof(handler->socket_filename),
-             UNIX_SOCKET_HANDLER_SOCKET_FMT_STRING, getenv("HOME"));
+             UNIX_SOCKET_HANDLER_SOCKET_FMT_STRING, getenv("USER"));
 
     umask(S_IRWXO);
 
