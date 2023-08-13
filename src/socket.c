@@ -128,7 +128,7 @@ void init_unix_socket_handler(UnixSocketHandler *handler) {
     }
 
     int ret = fcntl(handler->socket_descriptor, F_SETFL, O_NONBLOCK, 1);
-    if (ret != -1) {
+    if (ret == -1) {
         close(handler->socket_descriptor);
         handler->socket_descriptor = -1;
         handler->flags = 0xFFFFFFFFFFFFFFFF;
