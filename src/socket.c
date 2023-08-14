@@ -1,4 +1,5 @@
 #include "socket.h"
+#include "common_constants.h"
 
 // standard library includes
 #include <stdlib.h>
@@ -90,6 +91,23 @@ int unix_socket_handler_thread_function(void *ud) {
                 }
                 if (obs_frontend_streaming_active()) {
                     ret_buffer[1] |= 2;
+                }
+                if (obs_frontend_replay_buffer_active()) {
+                    ret_buffer[1] |= 4;
+                }
+            } else if (buffer[0] == UNIX_SOCKET_EVENT_START_REPLAY_BUFFER) {
+                obs_frontend_replay_buffer_start();
+                ret_buffer[0] = UNIX_SOCKET_EVENT_NOP;
+            } else if (buffer[0] == UNIX_SOCKET_EVENT_STOP_REPLAY_BUFFER) {
+                obs_frontend_replay_buffer_stop();
+                ret_buffer[0] = UNIX_SOCKET_EVENT_NOP;
+            } else if (buffer[0] == UNIX_SOCKET_EVENT_SAVE_REPLAY_BUFFER) {
+                if (obs_frontend_replay_buffer_active()) {
+                    obs_frontend_replay_buffer_save();
+                    ret_buffer[0] = UNIX_SOCKET_EVENT_NOP;
+                } else {
+                    ret = -1;
+                    break;
                 }
             }
             ret = 0;

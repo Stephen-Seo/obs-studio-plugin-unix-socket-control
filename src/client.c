@@ -18,6 +18,9 @@ void print_usage(char *name) {
     printf("   | --stop-recording\n");
     printf("   | --start-streaming\n");
     printf("   | --stop-streaming\n");
+    printf("   | --start-replay-buffer\n");
+    printf("   | --stop-replay-buffer\n");
+    printf("   | --save-replay-buffer\n");
     printf("   | --get-status]\n");
 }
 
@@ -39,6 +42,12 @@ int main(int argc, char **argv) {
             type = UNIX_SOCKET_EVENT_START_STREAMING;
         } else if (strncmp(argv[1], "--stop-streaming", 16) == 0) {
             type = UNIX_SOCKET_EVENT_STOP_STREAMING;
+        } else if (strncmp(argv[1], "--start-replay-buffer", 21) == 0) {
+            type = UNIX_SOCKET_EVENT_START_REPLAY_BUFFER;
+        } else if (strncmp(argv[1], "--stop-replay-buffer", 20) == 0) {
+            type = UNIX_SOCKET_EVENT_STOP_REPLAY_BUFFER;
+        } else if (strncmp(argv[1], "--save-replay-buffer", 20) == 0) {
+            type = UNIX_SOCKET_EVENT_SAVE_REPLAY_BUFFER;
         } else if (strncmp(argv[1], "--get-status", 12) == 0) {
             type = UNIX_SOCKET_EVENT_GET_STATUS;
         } else {
@@ -94,9 +103,10 @@ int main(int argc, char **argv) {
     }
 
     if (type == UNIX_SOCKET_EVENT_GET_STATUS && buffer[0] == UNIX_SOCKET_EVENT_GET_STATUS) {
-        printf("Is recording: %s\nIs streaming: %s\n",
+        printf("Is recording: %s\nIs streaming: %s\nReplay buffer active: %s\n",
                (buffer[1] & 1) != 0 ? "true" : "false",
-               (buffer[1] & 2) != 0 ? "true" : "false");
+               (buffer[1] & 2) != 0 ? "true" : "false",
+               (buffer[1] & 4) != 0 ? "true" : "false");
     } else if (buffer[0] != UNIX_SOCKET_EVENT_NOP) {
         // Error. TODO handle this.
         return 7;
@@ -113,6 +123,15 @@ int main(int argc, char **argv) {
                 break;
             case UNIX_SOCKET_EVENT_STOP_STREAMING:
                 puts("Sent event \"stop streaming\"!");
+                break;
+            case UNIX_SOCKET_EVENT_START_REPLAY_BUFFER:
+                puts("Sent event \"start replay-buffer\"!");
+                break;
+            case UNIX_SOCKET_EVENT_STOP_REPLAY_BUFFER:
+                puts("Sent event \"stop replay-buffer\"!");
+                break;
+            case UNIX_SOCKET_EVENT_SAVE_REPLAY_BUFFER:
+                puts("Sent event \"save replay-buffer\"!");
                 break;
             default:
                 // Error. TODO handle this
