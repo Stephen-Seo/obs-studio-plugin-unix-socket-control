@@ -16,6 +16,7 @@ void print_usage(char *name) {
     printf("  %s\n", name);
     printf("    [--start-recording \n");
     printf("   | --stop-recording\n");
+    printf("   | --toggle-recording\n");
     printf("   | --start-streaming\n");
     printf("   | --stop-streaming\n");
     printf("   | --start-replay-buffer\n");
@@ -40,6 +41,8 @@ int main(int argc, char **argv) {
             type = UNIX_SOCKET_EVENT_STOP_RECORDING;
         } else if (strncmp(argv[1], "--start-streaming", 17) == 0) {
             type = UNIX_SOCKET_EVENT_START_STREAMING;
+        } else if (strncmp(argv[1], "--toggle-recording", 18) == 0) {
+            type = UNIX_SOCKET_EVENT_TOGGLE_RECORDING;
         } else if (strncmp(argv[1], "--stop-streaming", 16) == 0) {
             type = UNIX_SOCKET_EVENT_STOP_STREAMING;
         } else if (strncmp(argv[1], "--start-replay-buffer", 21) == 0) {
@@ -117,6 +120,19 @@ int main(int argc, char **argv) {
                 break;
             case UNIX_SOCKET_EVENT_STOP_RECORDING:
                 puts("Sent event \"stop recording\"!");
+                break;
+            case UNIX_SOCKET_EVENT_TOGGLE_RECORDING:
+                switch(buffer[1]) {
+                case UNIX_SOCKET_EVENT_START_RECORDING:
+                    puts("Sent event \"toggle recording\", stream STARTED!\n");
+                    break;
+                case UNIX_SOCKET_EVENT_STOP_RECORDING:
+                    puts("Sent event \"toggle recording\", stream STOPPED!\n");
+                    break;
+                default:
+                    puts("Sent event \"toggle recording\", stream status UNKNOWN!\n");
+                    break;
+                }
                 break;
             case UNIX_SOCKET_EVENT_START_STREAMING:
                 puts("Sent event \"start streaming\"!");

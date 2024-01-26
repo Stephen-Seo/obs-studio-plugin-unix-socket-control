@@ -1,9 +1,16 @@
 cmake_minimum_required(VERSION 3.25)
-project(obs-studio-plugin-unix-socket-control)
+
+set(obs_usc_VERSION_MAJOR 1)
+set(obs_usc_VERSION_MINOR 2)
+set(obs_usc_VERSION_PATCH 0)
+set(obs_usc_VERSION_STR "${obs_usc_VERSION_MAJOR}.${obs_usc_VERSION_MINOR}.${obs_usc_VERSION_PATCH}")
+
+project(obs-studio-plugin-unix-socket-control VERSION "${obs_usc_VERSION_STR}")
+
 
 add_compile_options(
     -Wall -Wextra -Wpedantic
-    $<$<CONFIG:DEBUG>:-O0>
+    $<$<CONFIG:DEBUG>:-Og>
 )
 
 if(NOT DEFINED CMAKE_BUILD_TYPE OR NOT CMAKE_BUILD_TYPE)

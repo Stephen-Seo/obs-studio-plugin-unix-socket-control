@@ -78,6 +78,15 @@ int unix_socket_handler_thread_function(void *ud) {
             } else if (buffer[0] == UNIX_SOCKET_EVENT_STOP_RECORDING) {
                 obs_frontend_recording_stop();
                 ret_buffer[0] = UNIX_SOCKET_EVENT_NOP;
+            } else if (buffer[0] == UNIX_SOCKET_EVENT_TOGGLE_RECORDING) {
+                ret_buffer[0] = UNIX_SOCKET_EVENT_TOGGLE_RECORDING;
+                if (obs_frontend_recording_active()) {
+                    obs_frontend_recording_stop();
+                    ret_buffer[1] = UNIX_SOCKET_EVENT_STOP_RECORDING;
+                } else {
+                    obs_frontend_recording_start();
+                    ret_buffer[1] = UNIX_SOCKET_EVENT_START_RECORDING;
+                }
             } else if (buffer[0] == UNIX_SOCKET_EVENT_START_STREAMING) {
                 obs_frontend_streaming_start();
                 ret_buffer[0] = UNIX_SOCKET_EVENT_NOP;
