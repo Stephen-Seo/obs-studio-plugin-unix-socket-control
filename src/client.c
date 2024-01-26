@@ -19,8 +19,10 @@ void print_usage(char *name) {
     printf("   | --toggle-recording\n");
     printf("   | --start-streaming\n");
     printf("   | --stop-streaming\n");
+    printf("   | --toggle-streaming\n");
     printf("   | --start-replay-buffer\n");
     printf("   | --stop-replay-buffer\n");
+    printf("   | --toggle-replay-buffer\n");
     printf("   | --save-replay-buffer\n");
     printf("   | --get-status]\n");
 }
@@ -45,10 +47,14 @@ int main(int argc, char **argv) {
             type = UNIX_SOCKET_EVENT_TOGGLE_RECORDING;
         } else if (strncmp(argv[1], "--stop-streaming", 16) == 0) {
             type = UNIX_SOCKET_EVENT_STOP_STREAMING;
+        } else if (strncmp(argv[1], "--toggle-streaming", 18) == 0) {
+            type = UNIX_SOCKET_EVENT_TOGGLE_STREAMING;
         } else if (strncmp(argv[1], "--start-replay-buffer", 21) == 0) {
             type = UNIX_SOCKET_EVENT_START_REPLAY_BUFFER;
         } else if (strncmp(argv[1], "--stop-replay-buffer", 20) == 0) {
             type = UNIX_SOCKET_EVENT_STOP_REPLAY_BUFFER;
+        } else if (strncmp(argv[1], "--toggle-replay-buffer", 22) == 0) {
+            type = UNIX_SOCKET_EVENT_TOGGLE_REPLAY_BUFFER;
         } else if (strncmp(argv[1], "--save-replay-buffer", 20) == 0) {
             type = UNIX_SOCKET_EVENT_SAVE_REPLAY_BUFFER;
         } else if (strncmp(argv[1], "--get-status", 12) == 0) {
@@ -110,7 +116,10 @@ int main(int argc, char **argv) {
                (buffer[1] & 1) != 0 ? "true" : "false",
                (buffer[1] & 2) != 0 ? "true" : "false",
                (buffer[1] & 4) != 0 ? "true" : "false");
-    } else if (buffer[0] != UNIX_SOCKET_EVENT_NOP && buffer[0] != UNIX_SOCKET_EVENT_TOGGLE_RECORDING) {
+    } else if (buffer[0] != UNIX_SOCKET_EVENT_NOP
+            && buffer[0] != UNIX_SOCKET_EVENT_TOGGLE_RECORDING
+            && buffer[0] != UNIX_SOCKET_EVENT_TOGGLE_STREAMING
+            && buffer[0] != UNIX_SOCKET_EVENT_TOGGLE_REPLAY_BUFFER) {
         // Error. TODO handle this.
         return 7;
     } else {
@@ -124,13 +133,13 @@ int main(int argc, char **argv) {
             case UNIX_SOCKET_EVENT_TOGGLE_RECORDING:
                 switch(buffer[1]) {
                 case UNIX_SOCKET_EVENT_START_RECORDING:
-                    puts("Sent event \"toggle recording\", stream STARTED!");
+                    puts("Sent event \"toggle recording\", recording STARTED!");
                     break;
                 case UNIX_SOCKET_EVENT_STOP_RECORDING:
-                    puts("Sent event \"toggle recording\", stream STOPPED!");
+                    puts("Sent event \"toggle recording\", recording STOPPED!");
                     break;
                 default:
-                    puts("Sent event \"toggle recording\", stream status UNKNOWN!");
+                    puts("Sent event \"toggle recording\", recording status UNKNOWN!");
                     break;
                 }
                 break;
@@ -140,11 +149,37 @@ int main(int argc, char **argv) {
             case UNIX_SOCKET_EVENT_STOP_STREAMING:
                 puts("Sent event \"stop streaming\"!");
                 break;
+            case UNIX_SOCKET_EVENT_TOGGLE_STREAMING:
+                switch(buffer[1]) {
+                case UNIX_SOCKET_EVENT_START_STREAMING:
+                    puts("Sent event \"toggle streaming\", stream STARTED!");
+                    break;
+                case UNIX_SOCKET_EVENT_STOP_STREAMING:
+                    puts("Sent event \"toggle streaming\", stream STOPPED!");
+                    break;
+                default:
+                    puts("Sent event \"toggle streaming\", stream status UNKNOWN!");
+                    break;
+                }
+                break;
             case UNIX_SOCKET_EVENT_START_REPLAY_BUFFER:
                 puts("Sent event \"start replay-buffer\"!");
                 break;
             case UNIX_SOCKET_EVENT_STOP_REPLAY_BUFFER:
                 puts("Sent event \"stop replay-buffer\"!");
+                break;
+            case UNIX_SOCKET_EVENT_TOGGLE_REPLAY_BUFFER:
+                switch(buffer[1]) {
+                case UNIX_SOCKET_EVENT_START_REPLAY_BUFFER:
+                    puts("Sent event \"toggle replay-buffer\", replay-buffer STARTED!");
+                    break;
+                case UNIX_SOCKET_EVENT_STOP_REPLAY_BUFFER:
+                    puts("Sent event \"toggle replay-buffer\", replay-buffer STOPPED!");
+                    break;
+                default:
+                    puts("Sent event \"toggle replay-buffer\", replay-buffer status UNKNOWN!");
+                    break;
+                }
                 break;
             case UNIX_SOCKET_EVENT_SAVE_REPLAY_BUFFER:
                 puts("Sent event \"save replay-buffer\"!");

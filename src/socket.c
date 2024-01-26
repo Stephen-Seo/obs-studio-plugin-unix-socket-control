@@ -93,6 +93,15 @@ int unix_socket_handler_thread_function(void *ud) {
             } else if (buffer[0] == UNIX_SOCKET_EVENT_STOP_STREAMING) {
                 obs_frontend_streaming_stop();
                 ret_buffer[0] = UNIX_SOCKET_EVENT_NOP;
+            } else if (buffer[0] == UNIX_SOCKET_EVENT_TOGGLE_STREAMING) {
+                ret_buffer[0] = UNIX_SOCKET_EVENT_TOGGLE_STREAMING;
+                if (obs_frontend_streaming_active()) {
+                    obs_frontend_streaming_stop();
+                    ret_buffer[1] = UNIX_SOCKET_EVENT_STOP_STREAMING;
+                } else {
+                    obs_frontend_streaming_start();
+                    ret_buffer[1] = UNIX_SOCKET_EVENT_START_STREAMING;
+                }
             } else if (buffer[0] == UNIX_SOCKET_EVENT_GET_STATUS) {
                 ret_buffer[0] = UNIX_SOCKET_EVENT_GET_STATUS;
                 if (obs_frontend_recording_active()) {
@@ -110,6 +119,15 @@ int unix_socket_handler_thread_function(void *ud) {
             } else if (buffer[0] == UNIX_SOCKET_EVENT_STOP_REPLAY_BUFFER) {
                 obs_frontend_replay_buffer_stop();
                 ret_buffer[0] = UNIX_SOCKET_EVENT_NOP;
+            } else if (buffer[0] == UNIX_SOCKET_EVENT_TOGGLE_REPLAY_BUFFER) {
+                ret_buffer[0] = UNIX_SOCKET_EVENT_TOGGLE_REPLAY_BUFFER;
+                if (obs_frontend_replay_buffer_active()) {
+                    obs_frontend_replay_buffer_stop();
+                    ret_buffer[1] = UNIX_SOCKET_EVENT_STOP_REPLAY_BUFFER;
+                } else {
+                    obs_frontend_replay_buffer_start();
+                    ret_buffer[1] = UNIX_SOCKET_EVENT_START_REPLAY_BUFFER;
+                }
             } else if (buffer[0] == UNIX_SOCKET_EVENT_SAVE_REPLAY_BUFFER) {
                 if (obs_frontend_replay_buffer_active()) {
                     obs_frontend_replay_buffer_save();
