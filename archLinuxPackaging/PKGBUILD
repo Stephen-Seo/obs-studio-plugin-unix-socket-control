@@ -1,5 +1,5 @@
 pkgname=obs-studio-plugin-unix-socket-control
-pkgver=1.1
+pkgver=1.2
 pkgrel=1
 pkgdesc="An obs studio plugin to command obs to start/stop recording/streaming via unix socket"
 arch=(x86_64)
@@ -8,10 +8,10 @@ license=('MIT')
 depends=(obs-studio)
 makedepends=(cmake)
 source=("${pkgname}_${pkgver}.tar.gz::$url/archive/$pkgver.tar.gz")
-sha256sums=(2218af30e64ea33ca806815ae4f7a9b94b218be50f81ac12c4ad5c1da6f45b30)
+sha256sums=(379d04206718dfc0ca30b6f9d9099c0e36f45726b75f45c580a8cd9fa660fbc3)
 
 build() {
-	cd "$pkgname"
+    cd "$pkgname"
     mkdir buildRelease
     cd buildRelease
     cmake -DCMAKE_BUILD_TYPE=Release ..
