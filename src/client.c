@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
                (buffer[1] & 1) != 0 ? "true" : "false",
                (buffer[1] & 2) != 0 ? "true" : "false",
                (buffer[1] & 4) != 0 ? "true" : "false");
-    } else if (buffer[0] != UNIX_SOCKET_EVENT_NOP) {
+    } else if (buffer[0] != UNIX_SOCKET_EVENT_NOP && buffer[0] != UNIX_SOCKET_EVENT_TOGGLE_RECORDING) {
         // Error. TODO handle this.
         return 7;
     } else {
@@ -124,13 +124,13 @@ int main(int argc, char **argv) {
             case UNIX_SOCKET_EVENT_TOGGLE_RECORDING:
                 switch(buffer[1]) {
                 case UNIX_SOCKET_EVENT_START_RECORDING:
-                    puts("Sent event \"toggle recording\", stream STARTED!\n");
+                    puts("Sent event \"toggle recording\", stream STARTED!");
                     break;
                 case UNIX_SOCKET_EVENT_STOP_RECORDING:
-                    puts("Sent event \"toggle recording\", stream STOPPED!\n");
+                    puts("Sent event \"toggle recording\", stream STOPPED!");
                     break;
                 default:
-                    puts("Sent event \"toggle recording\", stream status UNKNOWN!\n");
+                    puts("Sent event \"toggle recording\", stream status UNKNOWN!");
                     break;
                 }
                 break;
