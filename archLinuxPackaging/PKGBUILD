@@ -12,10 +12,8 @@ sha256sums=(259ea3e490da13dd98b5593571310b7f0abab926be8436b00a272ca768b08eac)
 
 build() {
     cd "$pkgname"
-    mkdir buildRelease
-    cd buildRelease
-    cmake -DCMAKE_BUILD_TYPE=Release ..
-    make
+    cmake -S . -B buildRelease -DCMAKE_BUILD_TYPE=Release
+    make -C buildRelease
 }
 
 package() {
