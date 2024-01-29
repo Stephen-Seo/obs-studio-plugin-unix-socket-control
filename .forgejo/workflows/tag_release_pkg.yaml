@@ -1,0 +1,71 @@
+name: Create releases with ArchLinux pkg
+on:
+  push:
+    branches:
+      - '*'
+
+jobs:
+  check-and-build-and-release:
+    runs-on: any_archLinux
+    steps:
+      - name: Get tags
+        run: |
+          curl --fail-with-body -X 'GET' \
+          'https://git.seodisparate.com/api/v1/repos/stephenseo/obs-studio-plugin-unix-socket-control/tags' \
+          -H 'accept: application/json' -o tags.json -w '%output{header_count}%header{x-total-count}' 2>/dev/null \
+      - name: Fetch repo
+        run: git clone https://git.seodisparate.com/stephenseo/obs-studio-plugin-unix-socket-control.git obs_usc
+      - name: Fetch PKGBUILD
+        run: pushd obs_usc >&/dev/null && git checkout main && popd >&/dev/null && cp obs_usc/archLinuxPackaging/PKGBUILD ./
+      - name: Check tags and build per release
+        run: |
+          SAVED_DIR="$(pwd)"
+          TAG_COUNT="$(cat ./header_count)"
+
+          for ((i=0; i<$TAG_COUNT; ++i)); do
+            echo "$(jq ".[$i].name" < ./tags.json | tr -d '"')" >> tempList
+          done
+
+          sort -V < tempList > versionList
+
+          for ((i=0; i<$TAG_COUNT; ++i)); do
+            cd "$SAVED_DIR"
+
+            TAG_NAME="$(sed -n "$((i+1))p" ./versionList)"
+
+            curl -X 'GET' "https://git.seodisparate.com/api/v1/repos/stephenseo/obs-studio-plugin-unix-socket-control/releases/tags/${TAG_NAME}" -H 'accept: application/json' -w '%output{http_code}%{http_code}' >&/dev/null
+
+            if [[ $(cat ./http_code) != "404" ]]; then
+              continue
+            fi
+
+            echo "Trying to build and release \"$TAG_NAME\"..."
+
+            mkdir -p "build_${TAG_NAME}" || continue
+            cp ./PKGBUILD "build_${TAG_NAME}/" || continue
+            sed -i "s/^pkgver=.*\$/pkgver=${TAG_NAME}/" "build_${TAG_NAME}/PKGBUILD" || continue
+            sed -i 's/^pkgrel=.*$/pkgrel=1/' "build_${TAG_NAME}/PKGBUILD" || continue
+            sed -i 's/^sha256sums=.*$/sha256sums=("SKIP")/' "build_${TAG_NAME}/PKGBUILD" || continue
+
+            cd "build_${TAG_NAME}" || continue
+
+            makepkg || continue
+
+            curl --fail-with-body -X 'POST' \
+            "https://git.seodisparate.com/api/v1/repos/stephenseo/obs-studio-plugin-unix-socket-control/releases" \
+            -H 'accept: application/json' \
+            -H "Authorization: token ${GITHUB_TOKEN}" \
+            -H 'Content-Type: application/json' \
+            -d "{
+            \"name\": \"OBS Plugin Unix Socket Control version ${TAG_NAME}\",
+            \"body\": \"\",
+            \"tag_name\": \"${TAG_NAME}\"
+            }" > release_response.json || continue
+
+            curl --fail-with-body -X 'POST' \
+            "https://git.seodisparate.com/api/v1/repos/stephenseo/obs-studio-plugin-unix-socket-control/releases/$(jq .id < release_response.json)/assets" \
+            -H 'accept: application/json' \
+            -H "Authorization: token ${GITHUB_TOKEN}" \
+            -H 'Content-Type: multipart/form-data' \
+            -F "attachment=@obs-studio-plugin-unix-socket-control-${TAG_NAME}-1-x86_64.pkg.tar.zst;type=application/zstd" > release_asset.json || continue
+          done
