@@ -6,7 +6,7 @@ on:
 
 jobs:
   check-and-build-and-release:
-    runs-on: any_archLinux
+    runs-on: x86_64_archLinux
     steps:
       - name: Get tags
         run: |
