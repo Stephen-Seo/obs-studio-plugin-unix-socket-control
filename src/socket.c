@@ -23,7 +23,7 @@ void internal_wait_on_obs_frontend_event(UnixSocketHandler *handler, UnixSocketE
         duration.tv_nsec = 1000000;
         unsigned int ticks = 0;
         while(atomic_load(&handler->callback_var) != (event & UNIX_SOCKET_EVENT_MASK)) {
-            if (++ticks > 1400) {
+            if (++ticks > 5000) {
                 break;
             } else {
                 thrd_sleep(&duration, 0);
