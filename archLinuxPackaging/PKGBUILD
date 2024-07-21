@@ -8,7 +8,7 @@ license=('MIT')
 depends=(obs-studio)
 makedepends=(cmake)
 source=("${pkgname}_${pkgver}.tar.gz::$url/archive/$pkgver.tar.gz")
-sha256sums=(259ea3e490da13dd98b5593571310b7f0abab926be8436b00a272ca768b08eac)
+sha256sums=(6e0f1d4d48e9a26382aaea7e1969788373c301b685c49cd916d7f518ac148265)
 
 build() {
     cd "$pkgname"
