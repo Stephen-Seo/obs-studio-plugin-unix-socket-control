@@ -4,10 +4,14 @@
 // standard library includes
 #include <stdint.h>
 #include <threads.h>
+#include <stdatomic.h>
 
 // unix includes
 #include <sys/socket.h>
 #include <sys/un.h>
+
+// third party includes
+#include <obs-frontend-api.h>
 
 // local includes
 #include "common_constants.h"
@@ -20,6 +24,7 @@ typedef struct UnixSocketHandler {
     struct sockaddr_un name;
     thrd_t *thread;
     mtx_t *mutex;
+    atomic_uint callback_var;
     /*
      * ???? 0001 - thread should stop
      */
@@ -32,5 +37,6 @@ typedef struct UnixSocketHandler {
 void init_unix_socket_handler(UnixSocketHandler *handler);
 void cleanup_unix_socket_handler(UnixSocketHandler *handler);
 int is_unix_socket_handler_valid(const UnixSocketHandler *handler);
+void unix_socket_handler_frontend_event_callback(enum obs_frontend_event event, void *ud);
 
 #endif

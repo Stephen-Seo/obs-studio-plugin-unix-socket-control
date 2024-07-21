@@ -16,6 +16,22 @@
 // obs-studio includes
 #include <obs-frontend-api.h>
 
+void internal_wait_on_obs_frontend_event(UnixSocketHandler *handler, UnixSocketEventType event) {
+    if (is_unix_socket_handler_valid(handler) && (event & UNIX_SOCKET_EVENT_WAIT) != 0) {
+        struct timespec duration;
+        duration.tv_sec = 0;
+        duration.tv_nsec = 1000000;
+        unsigned int ticks = 0;
+        while(atomic_load(&handler->callback_var) != (event & UNIX_SOCKET_EVENT_MASK)) {
+            if (++ticks > 1400) {
+                break;
+            } else {
+                thrd_sleep(&duration, 0);
+            }
+        }
+    }
+}
+
 int unix_socket_handler_thread_function(void *ud) {
     UnixSocketHandler *handler = (UnixSocketHandler*)ud;
 
@@ -57,6 +73,8 @@ int unix_socket_handler_thread_function(void *ud) {
             }
             mtx_unlock(handler->mutex);
 
+            atomic_store(&handler->callback_var, 0);
+
             ret = read(data_socket, buffer, sizeof(buffer));
             if (ret == -1) {
                 if (errno == EAGAIN || errno == EWOULDBLOCK) {
@@ -72,37 +90,45 @@ int unix_socket_handler_thread_function(void *ud) {
                 break;
             }
 
-            if (buffer[0] == UNIX_SOCKET_EVENT_START_RECORDING) {
+            if ((buffer[0] & UNIX_SOCKET_EVENT_MASK) == UNIX_SOCKET_EVENT_START_RECORDING) {
                 obs_frontend_recording_start();
+                internal_wait_on_obs_frontend_event(handler, buffer[0]);
                 ret_buffer[0] = UNIX_SOCKET_EVENT_NOP;
-            } else if (buffer[0] == UNIX_SOCKET_EVENT_STOP_RECORDING) {
+            } else if ((buffer[0] & UNIX_SOCKET_EVENT_MASK) == UNIX_SOCKET_EVENT_STOP_RECORDING) {
                 obs_frontend_recording_stop();
+                internal_wait_on_obs_frontend_event(handler, buffer[0]);
                 ret_buffer[0] = UNIX_SOCKET_EVENT_NOP;
-            } else if (buffer[0] == UNIX_SOCKET_EVENT_TOGGLE_RECORDING) {
+            } else if ((buffer[0] & UNIX_SOCKET_EVENT_MASK) == UNIX_SOCKET_EVENT_TOGGLE_RECORDING) {
                 ret_buffer[0] = UNIX_SOCKET_EVENT_TOGGLE_RECORDING;
                 if (obs_frontend_recording_active()) {
                     obs_frontend_recording_stop();
+                    internal_wait_on_obs_frontend_event(handler, UNIX_SOCKET_EVENT_STOP_RECORDING | (buffer[0] & UNIX_SOCKET_EVENT_WAIT));
                     ret_buffer[1] = UNIX_SOCKET_EVENT_STOP_RECORDING;
                 } else {
                     obs_frontend_recording_start();
+                    internal_wait_on_obs_frontend_event(handler, UNIX_SOCKET_EVENT_START_RECORDING | (buffer[0] & UNIX_SOCKET_EVENT_WAIT));
                     ret_buffer[1] = UNIX_SOCKET_EVENT_START_RECORDING;
                 }
-            } else if (buffer[0] == UNIX_SOCKET_EVENT_START_STREAMING) {
+            } else if ((buffer[0] & UNIX_SOCKET_EVENT_MASK) == UNIX_SOCKET_EVENT_START_STREAMING) {
                 obs_frontend_streaming_start();
+                internal_wait_on_obs_frontend_event(handler, buffer[0]);
                 ret_buffer[0] = UNIX_SOCKET_EVENT_NOP;
-            } else if (buffer[0] == UNIX_SOCKET_EVENT_STOP_STREAMING) {
+            } else if ((buffer[0] & UNIX_SOCKET_EVENT_MASK) == UNIX_SOCKET_EVENT_STOP_STREAMING) {
                 obs_frontend_streaming_stop();
+                internal_wait_on_obs_frontend_event(handler, buffer[0]);
                 ret_buffer[0] = UNIX_SOCKET_EVENT_NOP;
-            } else if (buffer[0] == UNIX_SOCKET_EVENT_TOGGLE_STREAMING) {
+            } else if ((buffer[0] & UNIX_SOCKET_EVENT_MASK) == UNIX_SOCKET_EVENT_TOGGLE_STREAMING) {
                 ret_buffer[0] = UNIX_SOCKET_EVENT_TOGGLE_STREAMING;
                 if (obs_frontend_streaming_active()) {
                     obs_frontend_streaming_stop();
+                    internal_wait_on_obs_frontend_event(handler, UNIX_SOCKET_EVENT_STOP_STREAMING | (buffer[0] & UNIX_SOCKET_EVENT_WAIT));
                     ret_buffer[1] = UNIX_SOCKET_EVENT_STOP_STREAMING;
                 } else {
                     obs_frontend_streaming_start();
+                    internal_wait_on_obs_frontend_event(handler, UNIX_SOCKET_EVENT_START_STREAMING | (buffer[0] & UNIX_SOCKET_EVENT_WAIT));
                     ret_buffer[1] = UNIX_SOCKET_EVENT_START_STREAMING;
                 }
-            } else if (buffer[0] == UNIX_SOCKET_EVENT_GET_STATUS) {
+            } else if ((buffer[0] & UNIX_SOCKET_EVENT_MASK) == UNIX_SOCKET_EVENT_GET_STATUS) {
                 ret_buffer[0] = UNIX_SOCKET_EVENT_GET_STATUS;
                 if (obs_frontend_recording_active()) {
                     ret_buffer[1] |= 1;
@@ -113,24 +139,29 @@ int unix_socket_handler_thread_function(void *ud) {
                 if (obs_frontend_replay_buffer_active()) {
                     ret_buffer[1] |= 4;
                 }
-            } else if (buffer[0] == UNIX_SOCKET_EVENT_START_REPLAY_BUFFER) {
+            } else if ((buffer[0] & UNIX_SOCKET_EVENT_MASK) == UNIX_SOCKET_EVENT_START_REPLAY_BUFFER) {
                 obs_frontend_replay_buffer_start();
+                internal_wait_on_obs_frontend_event(handler, buffer[0]);
                 ret_buffer[0] = UNIX_SOCKET_EVENT_NOP;
-            } else if (buffer[0] == UNIX_SOCKET_EVENT_STOP_REPLAY_BUFFER) {
+            } else if ((buffer[0] & UNIX_SOCKET_EVENT_MASK) == UNIX_SOCKET_EVENT_STOP_REPLAY_BUFFER) {
                 obs_frontend_replay_buffer_stop();
+                internal_wait_on_obs_frontend_event(handler, buffer[0]);
                 ret_buffer[0] = UNIX_SOCKET_EVENT_NOP;
-            } else if (buffer[0] == UNIX_SOCKET_EVENT_TOGGLE_REPLAY_BUFFER) {
+            } else if ((buffer[0] & UNIX_SOCKET_EVENT_MASK) == UNIX_SOCKET_EVENT_TOGGLE_REPLAY_BUFFER) {
                 ret_buffer[0] = UNIX_SOCKET_EVENT_TOGGLE_REPLAY_BUFFER;
                 if (obs_frontend_replay_buffer_active()) {
                     obs_frontend_replay_buffer_stop();
+                    internal_wait_on_obs_frontend_event(handler, UNIX_SOCKET_EVENT_STOP_REPLAY_BUFFER | (buffer[0] & UNIX_SOCKET_EVENT_WAIT));
                     ret_buffer[1] = UNIX_SOCKET_EVENT_STOP_REPLAY_BUFFER;
                 } else {
                     obs_frontend_replay_buffer_start();
+                    internal_wait_on_obs_frontend_event(handler, UNIX_SOCKET_EVENT_START_REPLAY_BUFFER | (buffer[0] & UNIX_SOCKET_EVENT_WAIT));
                     ret_buffer[1] = UNIX_SOCKET_EVENT_START_REPLAY_BUFFER;
                 }
-            } else if (buffer[0] == UNIX_SOCKET_EVENT_SAVE_REPLAY_BUFFER) {
+            } else if ((buffer[0] & UNIX_SOCKET_EVENT_MASK) == UNIX_SOCKET_EVENT_SAVE_REPLAY_BUFFER) {
                 if (obs_frontend_replay_buffer_active()) {
                     obs_frontend_replay_buffer_save();
+                    internal_wait_on_obs_frontend_event(handler, buffer[0]);
                     ret_buffer[0] = UNIX_SOCKET_EVENT_NOP;
                 } else {
                     ret = -1;
@@ -163,6 +194,11 @@ void init_unix_socket_handler(UnixSocketHandler *handler) {
              UNIX_SOCKET_HANDLER_SOCKET_FMT_STRING, getenv("USER"));
 
     umask(S_IRWXO);
+
+    // Set up atomic value.
+    atomic_init(&handler->callback_var, 0);
+
+    obs_frontend_add_event_callback(unix_socket_handler_frontend_event_callback, handler);
 
     // Set up unix socket.
     handler->socket_descriptor = socket(AF_UNIX, SOCK_SEQPACKET, 0);
@@ -265,4 +301,36 @@ void cleanup_unix_socket_handler(UnixSocketHandler *handler) {
 
 int is_unix_socket_handler_valid(const UnixSocketHandler *handler) {
     return handler->flags == 0xFFFFFFFFFFFFFFFF ? 0 : 1;
+}
+
+void unix_socket_handler_frontend_event_callback(enum obs_frontend_event event,
+                                                 void *ud) {
+    UnixSocketHandler *handler = ud;
+    if (is_unix_socket_handler_valid(handler)) {
+        switch (event) {
+        case OBS_FRONTEND_EVENT_RECORDING_STARTED:
+            atomic_store(&handler->callback_var, UNIX_SOCKET_EVENT_START_RECORDING);
+            break;
+        case OBS_FRONTEND_EVENT_RECORDING_STOPPED:
+            atomic_store(&handler->callback_var, UNIX_SOCKET_EVENT_STOP_RECORDING);
+            break;
+        case OBS_FRONTEND_EVENT_STREAMING_STARTED:
+            atomic_store(&handler->callback_var, UNIX_SOCKET_EVENT_START_STREAMING);
+            break;
+        case OBS_FRONTEND_EVENT_STREAMING_STOPPED:
+            atomic_store(&handler->callback_var, UNIX_SOCKET_EVENT_STOP_STREAMING);
+            break;
+        case OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTED:
+            atomic_store(&handler->callback_var, UNIX_SOCKET_EVENT_START_REPLAY_BUFFER);
+            break;
+        case OBS_FRONTEND_EVENT_REPLAY_BUFFER_STOPPED:
+            atomic_store(&handler->callback_var, UNIX_SOCKET_EVENT_STOP_REPLAY_BUFFER);
+            break;
+        case OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED:
+            atomic_store(&handler->callback_var, UNIX_SOCKET_EVENT_SAVE_REPLAY_BUFFER);
+            break;
+        default:
+          break;
+        }
+    }
 }

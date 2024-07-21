@@ -25,6 +25,7 @@ void print_usage(char *name) {
     printf("   | --toggle-replay-buffer\n");
     printf("   | --save-replay-buffer\n");
     printf("   | --get-status]\n");
+    printf("    --wait\n");
 }
 
 void cleanup_data_socket(int *data_socket) {
@@ -38,27 +39,40 @@ int main(int argc, char **argv) {
 
     if (argc == 2) {
         if (strncmp(argv[1], "--start-recording", 17) == 0) {
-            type = UNIX_SOCKET_EVENT_START_RECORDING;
+            type = UNIX_SOCKET_EVENT_START_RECORDING |
+                (UNIX_SOCKET_EVENT_WAIT & type);
         } else if (strncmp(argv[1], "--stop-recording", 16) == 0) {
-            type = UNIX_SOCKET_EVENT_STOP_RECORDING;
+            type = UNIX_SOCKET_EVENT_STOP_RECORDING |
+                (UNIX_SOCKET_EVENT_WAIT & type);
         } else if (strncmp(argv[1], "--start-streaming", 17) == 0) {
-            type = UNIX_SOCKET_EVENT_START_STREAMING;
+            type = UNIX_SOCKET_EVENT_START_STREAMING |
+                (UNIX_SOCKET_EVENT_WAIT & type);
         } else if (strncmp(argv[1], "--toggle-recording", 18) == 0) {
-            type = UNIX_SOCKET_EVENT_TOGGLE_RECORDING;
+            type = UNIX_SOCKET_EVENT_TOGGLE_RECORDING |
+                (UNIX_SOCKET_EVENT_WAIT & type);
         } else if (strncmp(argv[1], "--stop-streaming", 16) == 0) {
-            type = UNIX_SOCKET_EVENT_STOP_STREAMING;
+            type = UNIX_SOCKET_EVENT_STOP_STREAMING |
+                (UNIX_SOCKET_EVENT_WAIT & type);
         } else if (strncmp(argv[1], "--toggle-streaming", 18) == 0) {
-            type = UNIX_SOCKET_EVENT_TOGGLE_STREAMING;
+            type = UNIX_SOCKET_EVENT_TOGGLE_STREAMING |
+                (UNIX_SOCKET_EVENT_WAIT & type);
         } else if (strncmp(argv[1], "--start-replay-buffer", 21) == 0) {
-            type = UNIX_SOCKET_EVENT_START_REPLAY_BUFFER;
+            type = UNIX_SOCKET_EVENT_START_REPLAY_BUFFER |
+                (UNIX_SOCKET_EVENT_WAIT & type);
         } else if (strncmp(argv[1], "--stop-replay-buffer", 20) == 0) {
-            type = UNIX_SOCKET_EVENT_STOP_REPLAY_BUFFER;
+            type = UNIX_SOCKET_EVENT_STOP_REPLAY_BUFFER |
+                (UNIX_SOCKET_EVENT_WAIT & type);
         } else if (strncmp(argv[1], "--toggle-replay-buffer", 22) == 0) {
-            type = UNIX_SOCKET_EVENT_TOGGLE_REPLAY_BUFFER;
+            type = UNIX_SOCKET_EVENT_TOGGLE_REPLAY_BUFFER |
+                (UNIX_SOCKET_EVENT_WAIT & type);
         } else if (strncmp(argv[1], "--save-replay-buffer", 20) == 0) {
-            type = UNIX_SOCKET_EVENT_SAVE_REPLAY_BUFFER;
+            type = UNIX_SOCKET_EVENT_SAVE_REPLAY_BUFFER |
+                (UNIX_SOCKET_EVENT_WAIT & type);
         } else if (strncmp(argv[1], "--get-status", 12) == 0) {
-            type = UNIX_SOCKET_EVENT_GET_STATUS;
+            type = UNIX_SOCKET_EVENT_GET_STATUS |
+                (UNIX_SOCKET_EVENT_WAIT & type);
+        } else if (strncmp(argv[1], "--wait", 6) == 0) {
+            type |= UNIX_SOCKET_EVENT_WAIT;
         } else {
             puts("ERROR: Invalid arg!");
             print_usage(argv[0]);
@@ -76,7 +90,7 @@ int main(int argc, char **argv) {
     struct sockaddr_un addr;
     int ret;
     __attribute__((cleanup(cleanup_data_socket))) int data_socket = -1;
-    char send_buf = (char)type;
+    unsigned char send_buf = (unsigned char)type;
     char buffer[8];
 
     memset(buffer, 0, sizeof(buffer));
