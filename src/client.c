@@ -11,7 +11,7 @@
 // local includes
 #include "common_constants.h"
 
-void print_usage(char *name) {
+void print_usage(const char *name) {
     printf("Usage:\n");
     printf("  %s\n", name);
     printf("    [--start-recording \n");
@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
         // Error. TODO handle this.
         return 7;
     } else {
-        switch(type) {
+        switch(type & UNIX_SOCKET_EVENT_MASK) {
             case UNIX_SOCKET_EVENT_START_RECORDING:
                 puts("Sent event \"start recording\"!");
                 break;
