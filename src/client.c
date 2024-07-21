@@ -37,50 +37,56 @@ void cleanup_data_socket(int *data_socket) {
 int main(int argc, char **argv) {
     UnixSocketEventType type = UNIX_SOCKET_EVENT_NOP;
 
-    if (argc == 2) {
-        if (strncmp(argv[1], "--start-recording", 17) == 0) {
+    const char *program_name = argv[0];
+    ++argv;
+    --argc;
+    if (argc == 0) {
+        print_usage(program_name);
+        return 1;
+    }
+    while (argc != 0) {
+        if (strncmp(argv[0], "--start-recording", 17) == 0) {
             type = UNIX_SOCKET_EVENT_START_RECORDING |
                 (UNIX_SOCKET_EVENT_WAIT & type);
-        } else if (strncmp(argv[1], "--stop-recording", 16) == 0) {
+        } else if (strncmp(argv[0], "--stop-recording", 16) == 0) {
             type = UNIX_SOCKET_EVENT_STOP_RECORDING |
                 (UNIX_SOCKET_EVENT_WAIT & type);
-        } else if (strncmp(argv[1], "--start-streaming", 17) == 0) {
+        } else if (strncmp(argv[0], "--start-streaming", 17) == 0) {
             type = UNIX_SOCKET_EVENT_START_STREAMING |
                 (UNIX_SOCKET_EVENT_WAIT & type);
-        } else if (strncmp(argv[1], "--toggle-recording", 18) == 0) {
+        } else if (strncmp(argv[0], "--toggle-recording", 18) == 0) {
             type = UNIX_SOCKET_EVENT_TOGGLE_RECORDING |
                 (UNIX_SOCKET_EVENT_WAIT & type);
-        } else if (strncmp(argv[1], "--stop-streaming", 16) == 0) {
+        } else if (strncmp(argv[0], "--stop-streaming", 16) == 0) {
             type = UNIX_SOCKET_EVENT_STOP_STREAMING |
                 (UNIX_SOCKET_EVENT_WAIT & type);
-        } else if (strncmp(argv[1], "--toggle-streaming", 18) == 0) {
+        } else if (strncmp(argv[0], "--toggle-streaming", 18) == 0) {
             type = UNIX_SOCKET_EVENT_TOGGLE_STREAMING |
                 (UNIX_SOCKET_EVENT_WAIT & type);
-        } else if (strncmp(argv[1], "--start-replay-buffer", 21) == 0) {
+        } else if (strncmp(argv[0], "--start-replay-buffer", 21) == 0) {
             type = UNIX_SOCKET_EVENT_START_REPLAY_BUFFER |
                 (UNIX_SOCKET_EVENT_WAIT & type);
-        } else if (strncmp(argv[1], "--stop-replay-buffer", 20) == 0) {
+        } else if (strncmp(argv[0], "--stop-replay-buffer", 20) == 0) {
             type = UNIX_SOCKET_EVENT_STOP_REPLAY_BUFFER |
                 (UNIX_SOCKET_EVENT_WAIT & type);
-        } else if (strncmp(argv[1], "--toggle-replay-buffer", 22) == 0) {
+        } else if (strncmp(argv[0], "--toggle-replay-buffer", 22) == 0) {
             type = UNIX_SOCKET_EVENT_TOGGLE_REPLAY_BUFFER |
                 (UNIX_SOCKET_EVENT_WAIT & type);
-        } else if (strncmp(argv[1], "--save-replay-buffer", 20) == 0) {
+        } else if (strncmp(argv[0], "--save-replay-buffer", 20) == 0) {
             type = UNIX_SOCKET_EVENT_SAVE_REPLAY_BUFFER |
                 (UNIX_SOCKET_EVENT_WAIT & type);
-        } else if (strncmp(argv[1], "--get-status", 12) == 0) {
+        } else if (strncmp(argv[0], "--get-status", 12) == 0) {
             type = UNIX_SOCKET_EVENT_GET_STATUS |
                 (UNIX_SOCKET_EVENT_WAIT & type);
-        } else if (strncmp(argv[1], "--wait", 6) == 0) {
+        } else if (strncmp(argv[0], "--wait", 6) == 0) {
             type |= UNIX_SOCKET_EVENT_WAIT;
         } else {
             puts("ERROR: Invalid arg!");
-            print_usage(argv[0]);
+            print_usage(program_name);
             return 2;
         }
-    } else {
-        print_usage(argv[0]);
-        return 1;
+        ++argv;
+        --argc;
     }
 
     char socket_filename[108];
