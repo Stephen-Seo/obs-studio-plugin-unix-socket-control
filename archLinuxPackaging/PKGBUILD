@@ -1,22 +1,22 @@
 pkgname=obs-studio-plugin-unix-socket-control
 pkgver=1.4.0
-pkgrel=1
+pkgrel=2
 pkgdesc="An obs studio plugin to command obs to start/stop recording/streaming via unix socket"
 arch=(x86_64)
-url="https://git.seodisparate.com/stephenseo/obs-studio-plugin-unix-socket-control"
+url="https://github.com/Stephen-Seo/obs-studio-plugin-unix-socket-control"
 license=('MIT')
 depends=(obs-studio)
 makedepends=(cmake)
-source=("${pkgname}_${pkgver}.tar.gz::$url/archive/$pkgver.tar.gz")
-sha256sums=(6e0f1d4d48e9a26382aaea7e1969788373c301b685c49cd916d7f518ac148265)
+source=("${pkgname}_${pkgver}.tar.gz::$url/archive/refs/tags/$pkgver.tar.gz")
+sha256sums=(9177e6692da13d9aba3abbd92a16f91f3718144fe9fb04a3d89ff59f938dfee5)
 
 build() {
-    cd "$pkgname"
+    cd "$pkgname-$pkgver"
     cmake -S . -B buildRelease -DCMAKE_BUILD_TYPE=Release
     make -C buildRelease
 }
 
 package() {
-    install -D -m555 "$srcdir/$pkgname/buildRelease/libunix-socket-control.so" "$pkgdir/usr/lib/obs-plugins/lib$pkgname.so"
-    install -D -m555 "$srcdir/$pkgname/buildRelease/unix-socket-control-client" "$pkgdir/usr/bin/$pkgname-client"
+    install -D -m555 "$srcdir/$pkgname-$pkgver/buildRelease/libunix-socket-control.so" "$pkgdir/usr/lib/obs-plugins/lib$pkgname.so"
+    install -D -m555 "$srcdir/$pkgname-$pkgver/buildRelease/unix-socket-control-client" "$pkgdir/usr/bin/$pkgname-client"
 }
